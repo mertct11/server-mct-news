@@ -29,7 +29,7 @@ app.post("/api/login", (req, res) => {
   }
 
   // Basit bir doğrulama, gerçek bir veritabanı kullanılmalıdır
-  if (validEmails.includes(email) && password === "password") {
+  if (validEmails.includes(email) && password === process.env.PASS) {
     // JWT üretimi
     const token = jwt.sign({ email }, secretKey);
     res.json({ token });
