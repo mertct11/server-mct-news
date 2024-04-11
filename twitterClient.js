@@ -12,5 +12,4 @@ const bearer = new TwitterApi(process.env.BEARER_TOKEN);
 
 const twitterClient = client.readWrite;
 const twitterBearer = bearer.readOnly;
-console.log({ here: twitterClient });
 module.exports = { twitterClient, twitterBearer };

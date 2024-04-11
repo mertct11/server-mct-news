@@ -89,10 +89,7 @@ const internalCheckToken = async (req, res, next) => {
   }
 };
 
-const internalParaphrasing = async (req, res, next) => {
-  console.log("asdasdasdasd");
-  console.log(req.body);
-  console.log("asdasdasdasd");
+const internalParaphrasingAPI1 = async (req, res, next) => {
   const twitText = req.body.twitText;
 
   const opts = {
@@ -113,33 +110,41 @@ const internalParaphrasing = async (req, res, next) => {
 
   try {
     const response = await axios.request(opts);
-    console.log(response.data);
 
     return response.data;
   } catch (error) {
     console.error(error);
     return null;
   }
+};
 
-  // try {
-  //   // Token doğrula
-  //   const response = await axios.post("http://localhost:4000/api/checkToken", {
-  //     token,
-  //   });
+const internalParaphrasingAPI2 = async (req, res, next) => {
+  const twitText = req.body.twitText;
 
-  //   // Token geçerli mi kontrol et
-  //   if (!response.data.isValid) {
-  //     return res.status(401).json({ success: false, message: "Invalid token" });
-  //   }
+  const axios = require("axios");
 
-  //   // Token geçerliyse, bir sonraki middleware'e devam et
-  //   next();
-  // } catch (error) {
-  //   console.error("Token check error:", error);
-  //   return res
-  //     .status(500)
-  //     .json({ success: false, message: "Internal server error" });
-  // }
+  const encodedParams = new URLSearchParams();
+  encodedParams.set("text", twitText);
+  encodedParams.set("lang", "tr");
+
+  const options = {
+    method: "POST",
+    url: "https://rimedia-paraphraser.p.rapidapi.com/api_paraphrase.php",
+    headers: {
+      "content-type": "application/x-www-form-urlencoded",
+      "X-RapidAPI-Key": "e4e4e8f5f3msh8f6ed623b25b8afp1cdc6fjsn9e23d85293dd",
+      "X-RapidAPI-Host": "rimedia-paraphraser.p.rapidapi.com",
+    },
+    data: encodedParams,
+  };
+
+  try {
+    const response = await axios.request(options);
+    return response.data;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
 };
 
 // const internalReadTweet = async () => {
@@ -172,10 +177,26 @@ const internalParaphrasing = async (req, res, next) => {
 ///// THERE IS NO READ TWEET FUNCTON YET :D
 
 app.post("/api/readTextTweet", internalCheckToken, async (req, res) => {
-  let result = await internalParaphrasing(req, res);
+  let regeneratedText1 = await internalParaphrasingAPI1(req, res);
+  let regeneratedText2 = await internalParaphrasingAPI2(req, res);
+  if (regeneratedText1 || regeneratedText2) {
+    let resData = [];
+    if (regeneratedText1?.rewrite) {
+      resData.push(regeneratedText1?.rewrite);
+    }
+    if (regeneratedText2?.result_text_new) {
+      let res = regeneratedText2?.result_text_new;
+      res = res.replace(/<[^>]+>/g, "");
 
-  if (result) {
-    res.json({ twitText: result.rewrite });
+      // HTML özel karakterlerini dönüştür
+      res = res.replace(/&#039;/g, "'");
+      res = res.replace(/&quot;/g, '"');
+      res = res.replace(/<\/?del>/g, "");
+      resData.push(res);
+    }
+    res.json({
+      twitTextArr: resData,
+    });
   }
 });
 
